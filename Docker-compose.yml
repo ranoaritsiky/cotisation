@@ -1,25 +1,53 @@
-version: '3.1'
+version: "2"
 
 services:
 
-  db:
-    image: postgres
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: user
-      POSTGRES_DB: ivolanitra_db
-
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
-
   app:
+    user: root
+    container_name: "ivolanitra_app"
     build: Docker/FastAPI/
+    ports:
+      - 8002:8002
+    restart: always
+    networks:
+      - hr-net
+    depends_on:
+      - db
+    
+    # command:
+    #   sh -c "uvicorn server/src/main:app --reload --host 0.0.0.0 --port 8001"
+    volumes:
+      - .:/usr/src/app
+    
+  db:
+    image: postgres:14.4
+    container_name: db
+    ports:
+      - "5433:5433"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ivolanitra_db
     restart: always
     volumes:
-      - .:.
+        - ./postgresql:/var/lib/postgresql/data
+    networks:
+      - hr-net
+  
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+      - PGADMIN_DEFAULT_PASSWORD=admin
     ports:
-      - 8087:8087
+      - "5050:80"
+    depends_on:
+      - db
+    restart: always
+    networks:
+      - hr-net
+
+networks:
+  hr-net:
+    driver: bridge
